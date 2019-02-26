@@ -36,7 +36,7 @@ public class GlRender implements GLSurfaceView.Renderer {
             //第一个三角形
             -0.5f, -0.5f,
             0.5f, -0.5f,
-            0.5f, 0, 5f,
+            0.5f, 0.5f,
 
             //第二个三角形
             -0.5f, -0.5f,
@@ -123,20 +123,15 @@ public class GlRender implements GLSurfaceView.Renderer {
     @Override
     public void onDrawFrame(GL10 gl) {
         //3 必写   清空屏幕，清空屏幕后调用glClearColor(）中设置的颜色填充屏幕；
-          GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);//情况实现原本oncreate的颜色
-        floatBuffer.position(0);//从最开始开始读取
-        //这个函数非常重要，告诉opengl从顶底位置开始读取数据，读取向量2 就是读取X Y ,读取类型是float
-        //第一个参数 就是顶点属性的位置，第二个参数 对于这个顶点，有几个向量我们这个2个，在OPENGL中有四个，第三个参数数据类型，第四个参数 使用整型参数才需要设置
-        //第五个参数 当数组存储多于一个属性的时候才有意义，这个后来再说
-        //第六个参数 告诉OPENGL从哪里读取数据
-        GLES20.glUseProgram(progrogramid);
-        GLES20.glVertexAttribPointer(aPositionLocation, POSITION_COMPONMENT_COUNT, GLES20.GL_FLOAT, false, 0, floatBuffer);
-        //顶点属性和数据关联之后调用下面方法
-        GLES20.glEnableVertexAttribArray(aPositionLocation);//通过这个调用，OPENGL现在知道去哪里寻找它所需要的数据了，上面一个方法只是数据和属性的关联
-
+        Log.d("openglse","onDrawFrame");
+          GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);//情况实现原本oncreate的颜
         //在此处绘制 点 线 三角形
         GLES20.glUniform4f(uColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);//更新着色器ucolor的值 台子白色
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6);//画三角形，读取floatbuffer前六个的数据绘制
+ //       GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 3, 6);//画三角形，读取floatbuffer前六个的数据绘制
+
+
+
         //画中间线 颜色红色
         GLES20.glUniform4f(uColorLocation, 1.0f, 0.0f, 0.0f, 1.0f);
         GLES20.glDrawArrays(GLES20.GL_LINES, 6, 2);
@@ -144,7 +139,7 @@ public class GlRender implements GLSurfaceView.Renderer {
         //绘制点
         GLES20.glUniform4f(uColorLocation, 0.0f, 1.0f, 0.0f, 1.0f);
         GLES20.glDrawArrays(GLES20.GL_POINTS, 8, 1);
-
+//
         GLES20.glUniform4f(uColorLocation, 0.0f, .0f, 1.0f, 1.0f);
         GLES20.glDrawArrays(GLES20.GL_POINTS, 9, 1);
 
