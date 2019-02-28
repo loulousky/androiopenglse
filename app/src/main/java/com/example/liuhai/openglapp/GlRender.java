@@ -2,6 +2,7 @@ package com.example.liuhai.openglapp;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -31,7 +32,13 @@ public class GlRender implements GLSurfaceView.Renderer {
 
     private static String ATTRIBUTECOLOR="aColor";//顶点着色器新增的颜色属性
 
+    private static String AMATRIX="vMatrix";
+
     private int aPositionLocation;//链接后得到顶点属性的位置
+
+    //正交投影的4X4矩阵
+    private float [] projectMatrix=new float[16];
+
 
     //在openglse中 对于手机屏幕的坐标 XY 最大最小值是 1 和 -1 所以对于各个顶点的坐标要让其显示在屏幕中要让他的XY在其-1 1之间
     private float[] tabVertex = {
@@ -41,11 +48,11 @@ public class GlRender implements GLSurfaceView.Renderer {
 //            0.5f,  -0.5f,
             //三角形扇
             0f, 0f,1f,1f,1f,
-            -0.5f, -0.5f,0.7f,0.7f,0.7f,
-            0.5f, -0.5f,0.7f,0.7f,0.7f,
-            0.5f, 0.5f,0.7f,0.7f,0.7f,
-            -0.5f, 0.5f,0.7f,0.7f,0.7f,
-            -0.5f,- 0.5f,0.7f,0.7f,0.7f,
+            -0.5f, -0.8f,0.7f,0.7f,0.7f,
+            0.5f, -0.8f,0.7f,0.7f,0.7f,
+            0.5f, 0.8f,0.7f,0.7f,0.7f,
+            -0.5f, 0.8f,0.7f,0.7f,0.7f,
+            -0.5f,- 0.8f,0.7f,0.7f,0.7f,
 
             //中间线
 
@@ -53,8 +60,8 @@ public class GlRender implements GLSurfaceView.Renderer {
             0.5f, 0f,1.0f,0.0f,0.0f,
 
             //两个木拍点
-            0f, -0.25f,0.0f,1.0f,0.0f,
-            0f, 0.25f,0.0f,0.0f,1.0f,
+            0f, -0.4f,0.0f,1.0f,0.0f,
+            0f, 0.4f,0.0f,0.0f,1.0f,
 
 
 
@@ -64,6 +71,7 @@ public class GlRender implements GLSurfaceView.Renderer {
     private FloatBuffer floatBuffer;
     private int progrogramid;
     private int aColorLocation;
+    private int aMatrixLocation;
 
 
     @Override
@@ -98,8 +106,12 @@ public class GlRender implements GLSurfaceView.Renderer {
             GLES20.glUseProgram(progrogramid);
             //得到uniform ucolor的位置 以后更新uniform值的时候会用到这个值
             uColorLocation = GLES20.glGetUniformLocation(progrogramid, U_COLOR);
+            //得到正交投影的矩阵
+            aMatrixLocation = glGetUniformLocation(progrogramid,AMATRIX);
+            //点的坐标
             aPositionLocation = GLES20.glGetAttribLocation(progrogramid, ATTRIBUTE);
 
+            //每个点的颜色
             aColorLocation = GLES20.glGetAttribLocation(progrogramid,ATTRIBUTECOLOR);
             //这两个位置有什么用？获得这两个位置之后，传递给OPENGL，让OPENGL可以知道在哪可以得到这两个属性对应的数据了
 
@@ -138,6 +150,22 @@ public class GlRender implements GLSurfaceView.Renderer {
 
         //2 设置更新VIEW的宽高 必写 设置视图的尺寸，这就告诉了OpenGL可以用来渲染surface的大小。
         GLES20.glViewport(0, 0, width, height);
+        //通过正交投影调整图像的比例
+        final float aspectRatin=width>height?(float)width/(float)height:(float) height/(float) width;//判断宽高比，找到两者之间的比例值
+
+        if(width>height){
+            Matrix.orthoM(projectMatrix,0,-aspectRatin,aspectRatin,-1f,1f,-1f,1f);
+        }else{
+
+            Matrix.orthoM(projectMatrix,0,-1f,1f,-aspectRatin,aspectRatin,-1f,1f);
+
+
+        }
+
+
+
+
+
     }
 
     @Override
@@ -145,6 +173,10 @@ public class GlRender implements GLSurfaceView.Renderer {
         //3 必写   清空屏幕，清空屏幕后调用glClearColor(）中设置的颜色填充屏幕；
         Log.d("openglse","onDrawFrame");
           GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);//情况实现原本oncreate的颜
+        glUniformMatrix4fv(aMatrixLocation,1,false,projectMatrix,0);//正交投影运用。
+        // 参数说明 第一个参数属性位置，第二个参数，被赋值的矩阵的个数，uniform可以是数组，第三个参数表明在向uniform变量赋值时该矩阵是否需要转置
+        // 。因为我们使用的是glm定义的矩阵，因此不要进行转置。第四个参数就是矩阵的地址了，第五个参数便宜量
+
 
 
 
@@ -200,8 +232,9 @@ public class GlRender implements GLSurfaceView.Renderer {
             = "attribute vec4 vPosition;            \n" // 顶点位置属性vPosition
             +"attribute vec4 aColor;            \n"//新增的颜色属性 属性只有顶点着色器有
             +"varying vec4 vColor;            \n"//新增的颜色属性 varying 修饰符让顶点着色器和片段着色器值能够共享
+            +"uniform mat4 vMatrix;            \n"//正交投影的矩阵
             + "void main(){                         \n"
-            + "   gl_Position = vPosition;\n" // 确定顶点位置
+            + "   gl_Position = vMatrix*vPosition;\n" // 确定顶点位置 与矩阵相乘修复画面的比例
             + "   vColor = aColor;\n" // 设置颜色的值 共享
             + "gl_PointSize=10.0;                     \n"
             + "}";
