@@ -22,7 +22,7 @@ import static android.opengl.GLES20.*;
  */
 public class GlRender implements GLSurfaceView.Renderer {
 
-    private static final int POSITION_COMPONMENT_COUNT = 2;//每个顶点2个向量 x y
+    private static final int POSITION_COMPONMENT_COUNT =2;//每个顶点2个向量 x y
 
     private static final int POSITION_COMPOINENT_COLOR_COUNT=3;//颜色的三个值
     private static String U_COLOR = "uColor"; //着色器的uniform的名字
@@ -38,6 +38,10 @@ public class GlRender implements GLSurfaceView.Renderer {
 
     //正交投影的4X4矩阵
     private float [] projectMatrix=new float[16];
+
+
+    //平移矩阵
+    private float[] modelMatrix=new float[16];
 
 
     //在openglse中 对于手机屏幕的坐标 XY 最大最小值是 1 和 -1 所以对于各个顶点的坐标要让其显示在屏幕中要让他的XY在其-1 1之间
@@ -150,17 +154,34 @@ public class GlRender implements GLSurfaceView.Renderer {
 
         //2 设置更新VIEW的宽高 必写 设置视图的尺寸，这就告诉了OpenGL可以用来渲染surface的大小。
         GLES20.glViewport(0, 0, width, height);
-        //通过正交投影调整图像的比例
-        final float aspectRatin=width>height?(float)width/(float)height:(float) height/(float) width;//判断宽高比，找到两者之间的比例值
 
-        if(width>height){
-            Matrix.orthoM(projectMatrix,0,-aspectRatin,aspectRatin,-1f,1f,-1f,1f);
-        }else{
+        //透视投影 包含了正交投影 先做透视投影 在正交投影  视椎体从-1开始到-10结束
+        MatrixHelper.perspectiveM(projectMatrix,45,(float)width/(float)height,1f,10f);
 
-            Matrix.orthoM(projectMatrix,0,-1f,1f,-aspectRatin,aspectRatin,-1f,1f);
+        Matrix.setIdentityM(modelMatrix,0);//平移的矩阵赋值
+        Matrix.translateM(modelMatrix,0,0,0,-2.5f);//Z轴平移2个单位
+        Matrix.rotateM(modelMatrix,0,-60,1f,0f,0f);
+        //先平移。在变换 移到-2开始才能看到-1的是椎体，不然的话默认为Z为0看不到
 
 
-        }
+        //得到两个矩阵，一个透视投影 一个加了移动和旋转，两个矩阵相乘就是要的结果，必须是透视投影左乘
+        //乘积的结果保存
+        float[] result=new float[16];
+        Matrix.multiplyMM(result,0,projectMatrix,0,modelMatrix,0);
+        System.arraycopy(result,0,projectMatrix,0,result.length);//结果COPY到projectMatrix
+
+
+//        //通过正交投影调整图像的比例
+//        final float aspectRatin=width>height?(float)width/(float)height:(float) height/(float) width;//判断宽高比，找到两者之间的比例值
+//
+//        if(width>height){
+//            Matrix.orthoM(projectMatrix,0,-aspectRatin,aspectRatin,-1f,1f,-1f,1f);
+//        }else{
+//
+//            Matrix.orthoM(projectMatrix,0,-1f,1f,-aspectRatin,aspectRatin,-1f,1f);
+//
+//
+//        }
 
 
 
