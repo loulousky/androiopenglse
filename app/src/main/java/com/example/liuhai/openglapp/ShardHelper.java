@@ -120,5 +120,24 @@ public class ShardHelper {
 
     }
 
+    /**
+     *
+     * @param vertext
+     * @param fragment
+     * @return 编译着色器然后链接到程序
+     */
+    public static int  buildProgram(String vertext,String fragment){
+        int program;
+        int vertextshader=CompileVertexShard(vertext);
+        int fragmentshader=CompileFragmentShare(fragment);
+
+        program= linkProgram(vertextshader,fragmentshader);
+
+        return program;
+
+
+
+    }
+
 
 }
